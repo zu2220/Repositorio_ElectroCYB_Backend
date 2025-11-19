@@ -31,6 +31,8 @@ public class Producto {
     // Usa el tipo que ya tengas en tu entidad (BigDecimal, Double, etc.)
     private String precio;
 
+    private Integer stock;
+
     // 👇 Mapeo de la tabla producto_caracteristicas
     @ElementCollection
     @CollectionTable(

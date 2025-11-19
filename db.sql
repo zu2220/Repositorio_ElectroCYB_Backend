@@ -50,94 +50,57 @@ VALUES (
 );
 
 -- 5.2. Datos de la tabla 'productos'
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(1, 'Lámpara LED Moderna Circular', '35.00', '/uploads/productos/IMG-20250806-WA0091.jpg', 'Lámpara LED de diseño moderno para sala o comedor. Bajo consumo energético.', 'Lámparas');
 
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(2, 'Fuente de poder 12V 10A', '45.00', '/uploads/productos/IMG-20250806-WA0089.jpg', 'Fuente de poder 12V 10A con armazon de aluminio', 'Fuentes de poder');
+INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria, stock) VALUES
+(13, 'Manguera LED Navideña', '3.50 x metro', '/uploads/productos/IMG-20250806-WA0019.jpg', 'Manguera LED Navideña, luz continua, flexible ideal para Proyectos y Figuras navideñas.', 'Tiras LED', 72);
 
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(3, 'Lámpara LED Moderna Circular', '20.00', '/uploads/productos/IMG-20250806-WA0088.jpg', 'Estilo industrial moderno. Ideal para cocinas y comedores.', 'Lámparas');
+INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria, stock) VALUES
+(14, 'Kit Solar con Radio y Linterna', '50.00', '/uploads/productos/IMG-20250806-WA0038.jpg', 'Kit Solar con Radio y Linterna, ideal para emergencias y actividades al aire libre.', 'Linternas', 48);
 
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(4, 'Detector de Billetes Falsos', '50.00', '/uploads/productos/IMG-20250806-WA0024.jpg', 'Detector de billetes falsos para evitar fraude en transacciones.', 'Detector de billetes falsos');
+INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria, stock) VALUES
+(15, 'Estaño para Soldar', '80.00', '/uploads/productos/IMG-20250806-WA0041.jpg', 'Estaño para soldar 1mm x 500g, ideal para proyectos electrónicos y eléctricos.', 'Accesorios', 20);
 
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(5, 'Foco LED RGB con Parlante', '30.00', '/uploads/productos/IMG-20250806-WA0027.jpg', 'Foco LED RGB con parlante para ambientes.', 'Focos LED RGB');
+INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria, stock) VALUES
+(16, 'Modulos LED ', '2.50 x Unidad', '/uploads/productos/IMG-20250806-WA0042.jpg', 'Modulos LED ideal para letreros y Proyectos.', 'Tiras LED', 100);
 
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(6, 'Foco LED 5W Calido', '5.00', '/uploads/productos/IMG-20250806-WA0030.jpg', 'Foco de luz calida.', 'Focos LED');
+INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria, stock) VALUES
+(17, 'Luminaria LED', 'Consultar', '/uploads/productos/IMG-20250806-WA0043.jpg', 'Luminaria LED ideal para Espacios grandes.', 'Lámparas', 5);
 
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(7, 'Tira LED RGB Inteligente', '75.00', '/uploads/productos/IMG-20250806-WA0032.jpg', 'Tira LED RGB con control por aplicación móvil. 5 metros de longitud.', 'Tiras LED');
+INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria, stock) VALUES
+(18, 'Extension de 16 puertos ', '50.00', '/uploads/productos/IMG-20250806-WA0060.jpg', 'Extension de 16 puertos con interruptor individual y proteccion contra sobrecargas.', 'Accesorios', 85);
 
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(8, 'Lámpara LED Moderna con Sensor de Movimiento', '22.00', '/uploads/productos/IMG-20250806-WA0058.jpg', 'Reflector LED de alta potencia para exteriores con Sensor de Movimiento. Ideal para interiores y fachadas.', 'Lámparas');
+INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria, stock) VALUES
+(19, 'Foco LED 45W Mariposa', '30.00', '/uploads/productos/IMG-20250806-WA0047.jpg', 'Foco de luz Blanca.', 'Focos LED', 67);
 
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(9, 'Kit Solar con Radio y Linterna', '90.00', '/uploads/productos/IMG-20250806-WA0033.jpg', 'Kit Solar con Radio y Linterna, ideal para emergencias y actividades al aire libre.', 'Linternas');
+INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria, stock) VALUES
+(20, 'Foco LED Recargable con Panel Solar', '30.00', '/uploads/productos/IMG-20250806-WA0065.jpg', 'Foco de luz Blanca Recargable con Panel Solar.', 'Focos LED Recargables', 18);
 
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(10, 'Cinta LED NEON ', '20.00', '/uploads/productos/IMG-20250806-WA0021.jpg', 'Cinta LED NEON 5 metros, luz continua, flexible ideal para letreros.', 'Tiras LED');
+INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria, stock) VALUES
+(21, 'Foco LED Recargable', '20.00', '/uploads/productos/IMG-20250806-WA0066.jpg', 'Foco de luz Blanca Recargable.', 'Focos LED Recargables', 44);
 
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(11, 'Manguera LED RGB', '10.00 x metro', '/uploads/productos/IMG-20250806-WA0016.jpg', 'Manguera LED RGB, luz continua, flexible ideal para letreros y Proyectos.', 'Tiras LED');
+INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria, stock) VALUES
+(22, 'Foco LED 36W Mariposa', '20.00', '/uploads/productos/IMG-20250806-WA0049.jpg', 'Foco de luz Blanca con Hojas para un mejor alcance de luz.', 'Focos LED', 96);
 
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(12, 'Manguera LED', '7.00 x metro', '/uploads/productos/IMG-20250806-WA0017.jpg', 'Manguera LED, luz continua, flexible ideal para letreros y Proyectos.', 'Tiras LED');
+INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria, stock) VALUES
+(23, 'Reflectores LED', 'Consultar', '/uploads/productos/IMG-20250806-WA0053.jpg', 'Reflectores LED de alta potencia para exteriores. Ideal para interiores y fachadas.', 'Reflectores LED', 31);
 
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(13, 'Manguera LED Navideña', '3.50 x metro', '/uploads/productos/IMG-20250806-WA0019.jpg', 'Manguera LED Navideña, luz continua, flexible ideal para Proyectos y Figuras navideñas.', 'Tiras LED');
+INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria, stock) VALUES
+(24, 'Foco LED 3W', '5.00', '/uploads/productos/IMG-20250806-WA0067.jpg', 'Foco de luz BLanca.', 'Focos LED', 79);
 
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(14, 'Kit Solar con Radio y Linterna', '50.00', '/uploads/productos/IMG-20250806-WA0038.jpg', 'Kit Solar con Radio y Linterna, ideal para emergencias y actividades al aire libre.', 'Linternas');
+INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria, stock) VALUES
+(25, 'Foco LED RGB', '10.00', '/uploads/productos/IMG-20250806-WA0070.jpg', 'Foco de luz RGB ideal para ambientes.', 'Focos LED RGB', 60);
 
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(15, 'Estaño para Soldar', '80.00', '/uploads/productos/IMG-20250806-WA0041.jpg', 'Estaño para soldar 1mm x 500g, ideal para proyectos electrónicos y eléctricos.', 'Accesorios');
+INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria, stock) VALUES
+(26, 'Foco LED Dimmer', '15.00', '/uploads/productos/IMG-20250806-WA0073.jpg', 'Foco de luz BLanca variable con 3 niveles de iluminacion.', 'Focos LED', 27);
 
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(16, 'Modulos LED ', '2.50 x Unidad', '/uploads/productos/IMG-20250806-WA0042.jpg', 'Modulos LED ideal para letreros y Proyectos.', 'Tiras LED');
+INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria, stock) VALUES
+(27, 'Foco LED 9w Calida', '7.00', '/uploads/productos/IMG-20250806-WA0074.jpg', 'Foco de luz calida.', 'Focos LED', 50);
 
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(17, 'Luminaria LED', 'Consultar', '/uploads/productos/IMG-20250806-WA0043.jpg', 'Luminaria LED ideal para Espacios grandes.', 'Lámparas');
+INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria, stock) VALUES
+(28, 'Lampara de Emergencia LED Recargable', '50.00', '/uploads/productos/IMG-20250806-WA0054.jpg', 'Lampara de Emergencia LED Recargable', 'Lamparas de Emergencia', 83);
 
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(18, 'Extension de 16 puertos ', '50.00', '/uploads/productos/IMG-20250806-WA0060.jpg', 'Extension de 16 puertos con interruptor individual y proteccion contra sobrecargas.', 'Accesorios');
-
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(19, 'Foco LED 45W Mariposa', '30.00', '/uploads/productos/IMG-20250806-WA0047.jpg', 'Foco de luz Blanca.', 'Focos LED');
-
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(20, 'Foco LED Recargable con Panel Solar', '30.00', '/uploads/productos/IMG-20250806-WA0065.jpg', 'Foco de luz Blanca Recargable con Panel Solar.', 'Focos LED Recargables');
-
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(21, 'Foco LED Recargable', '20.00', '/uploads/productos/IMG-20250806-WA0066.jpg', 'Foco de luz Blanca Recargable.', 'Focos LED Recargables');
-
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(22, 'Foco LED 36W Mariposa', '20.00', '/uploads/productos/IMG-20250806-WA0049.jpg', 'Foco de luz Blanca con Hojas para un mejor alcance de luz.', 'Focos LED');
-
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(23, 'Reflectores LED', 'Consultar', '/uploads/productos/IMG-20250806-WA0053.jpg', 'Reflectores LED de alta potencia para exteriores. Ideal para interiores y fachadas.', 'Reflectores LED');
-
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(24, 'Foco LED 3W', '5.00', '/uploads/productos/IMG-20250806-WA0067.jpg', 'Foco de luz BLanca.', 'Focos LED');
-
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(25, 'Foco LED RGB', '10.00', '/uploads/productos/IMG-20250806-WA0070.jpg', 'Foco de luz RGB ideal para ambientes.', 'Focos LED RGB');
-
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(26, 'Foco LED Dimmer', '15.00', '/uploads/productos/IMG-20250806-WA0073.jpg', 'Foco de luz BLanca variable con 3 niveles de iluminacion.', 'Focos LED');
-
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(27, 'Foco LED 9w Calida', '7.00', '/uploads/productos/IMG-20250806-WA0074.jpg', 'Foco de luz calida.', 'Focos LED');
-
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(28, 'Lampara de Emergencia LED Recargable', '50.00', '/uploads/productos/IMG-20250806-WA0054.jpg', 'Lampara de Emergencia LED Recargable', 'Lamparas de Emergencia');
-
-INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria) VALUES
-(29, 'Lampara de Emergencia LED Recargable', '60.00', '/uploads/productos/IMG-20250806-WA0055.jpg', 'Lampara de Emergencia LED Recargable con forma de ojos', 'Lamparas de Emergencia');
-
-
+INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria, stock) VALUES
+(29, 'Lampara de Emergencia LED Recargable', '60.00', '/uploads/productos/IMG-20250806-WA0055.jpg', 'Lampara de Emergencia LED Recargable con forma de ojos', 'Lamparas de Emergencia', 36);
 -- 5.3. Datos de la tabla 'producto_caracteristicas'
 -- Producto 1
 INSERT INTO producto_caracteristicas (producto_id, nombre, valor) VALUES
