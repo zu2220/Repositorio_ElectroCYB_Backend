@@ -44,6 +44,7 @@ public class ProductoService {
         existente.setDescripcion(datos.getDescripcion());
         existente.setCategoria(datos.getCategoria());
         existente.setImagen(datos.getImagen());
+        existente.setStock(datos.getStock());
 
         // 👇 actualizar características
         Map<String, String> nuevas = datos.getCaracteristicas();

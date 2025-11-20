@@ -1,12 +1,11 @@
+// src/main/java/com/electrocyb/store/chat/ChatController.java
 package com.electrocyb.store.chat;
-
-import java.util.Map;
 
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/chat")
-@CrossOrigin
+@RequestMapping("/api/chatbot")
+@CrossOrigin(origins = "http://localhost:5173")
 public class ChatController {
 
     private final ChatService chatService;
@@ -16,10 +15,8 @@ public class ChatController {
     }
 
     @PostMapping
-    public Map<String, String> chat(@RequestBody ChatRequest request) {
-
-        String respuesta = chatService.processMessage(request);
-
-        return Map.of("response", respuesta);
+    public ChatResponse chat(@RequestBody ChatRequest request) {
+        String reply = chatService.getReply(request);
+        return new ChatResponse(reply);
     }
 }

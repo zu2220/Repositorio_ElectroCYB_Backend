@@ -1,22 +1,12 @@
+// src/main/java/com/electrocyb/store/chat/ChatRequest.java
 package com.electrocyb.store.chat;
 
-public class ChatRequest {
-    private String message;
-    private String numeroPedido;
+import java.util.List;
 
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public String getNumeroPedido() {
-        return numeroPedido;
-    }
-
-    public void setNumeroPedido(String numeroPedido) {
-        this.numeroPedido = numeroPedido;
-    }
+public record ChatRequest(
+        String message,
+        List<MessageDto> history // opcional, para contexto
+) {
 }
+
+record MessageDto(String role, String content) {}

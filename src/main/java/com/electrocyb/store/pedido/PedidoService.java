@@ -222,29 +222,36 @@ public class PedidoService {
     }
 
     private OrderResponseDto mapToDto(Pedido pedido) {
-        List<OrderItemDto> itemDtos = pedido.getItems().stream()
-                .map(i -> new OrderItemDto(
-                        i.getProductoId(),
-                        i.getNombre(),
-                        i.getPrecio(),
-                        i.getImagen(),
-                        i.getCantidad()))
-                .toList();
+        // items
+        List<OrderItemDto> itemDtos = pedido.getItems() == null
+                ? List.of()
+                : pedido.getItems().stream()
+                        .map(i -> new OrderItemDto(
+                                i.getProductoId(),
+                                i.getNombre(),
+                                i.getPrecio(),
+                                i.getImagen(),
+                                i.getCantidad()))
+                        .toList();
 
-        List<HistorialEstadoDto> historialDtos = pedido.getHistorialEstados().stream()
-                .map(h -> new HistorialEstadoDto(
-                        h.getEstado(),
-                        h.getFecha(),
-                        h.getDescripcion()))
-                .toList();
+        // historial
+        List<HistorialEstadoDto> historialDtos = pedido.getHistorialEstados() == null
+                ? List.of()
+                : pedido.getHistorialEstados().stream()
+                        .map(h -> new HistorialEstadoDto(
+                                h.getEstado(),
+                                h.getFecha(),
+                                h.getDescripcion()))
+                        .toList();
 
+        // cliente
         ClienteEmbeddable c = pedido.getCliente();
         ClienteDto clienteDto = new ClienteDto(
-                c.getNombre(),
-                c.getEmail(),
-                c.getTelefono(),
-                c.getDireccion(),
-                c.getReferencia());
+                c != null ? c.getNombre() : null,
+                c != null ? c.getEmail() : null,
+                c != null ? c.getTelefono() : null,
+                c != null ? c.getDireccion() : null,
+                c != null ? c.getReferencia() : null);
 
         return new OrderResponseDto(
                 pedido.getId(),

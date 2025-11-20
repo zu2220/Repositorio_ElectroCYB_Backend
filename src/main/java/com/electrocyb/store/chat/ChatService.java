@@ -1,247 +1,381 @@
 package com.electrocyb.store.chat;
 
+import com.electrocyb.store.producto.ProductAdviceService;
+import com.electrocyb.store.producto.ProductAdviceService.ProductSearchResult;
+import com.electrocyb.store.producto.ProductAdviceService.SearchType;
 import com.electrocyb.store.producto.Producto;
-import com.electrocyb.store.producto.ProductoRepository;
-import com.electrocyb.store.pedido.Pedido;
-import com.electrocyb.store.pedido.PedidoRepository;
-import com.electrocyb.store.pedido.OrderStatus;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.text.Normalizer;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 @Service
 public class ChatService {
 
-    private final ProductoRepository productoRepository;
-    private final PedidoRepository pedidoRepository;
-
-    // patrón simple para códigos EC-000001
-    private static final Pattern PEDIDO_PATTERN =
-            Pattern.compile("(EC-\\d{6})", Pattern.CASE_INSENSITIVE);
-
-    // stopwords básicas para español
-    private static final Set<String> STOPWORDS = new HashSet<>(Arrays.asList(
-            "el", "la", "los", "las", "un", "una", "unos", "unas",
-            "de", "del", "al", "a", "y", "o", "u", "en", "para",
-            "por", "con", "que", "es", "son", "tienen", "hay", "venden",
-            "precio", "cuanto", "cuánto", "vale", "cuesta", "quiero",
-            "dime", "sobre", "del", "mi", "su", "mis", "sus",
-            "tienes", "tienen", "vende", "venden", "vendeis", "vendéis"
-    ));
+    private final WebClient webClient;
+    private final String model;
+    private final ProductAdviceService productAdviceService;
 
     public ChatService(
-            ProductoRepository productoRepository,
-            PedidoRepository pedidoRepository
+            @Value("${openai.api.key}") String apiKey,
+            @Value("${openai.base.url}") String baseUrl,
+            @Value("${openai.model}") String model,
+            ProductAdviceService productAdviceService
     ) {
-        this.productoRepository = productoRepository;
-        this.pedidoRepository = pedidoRepository;
+        this.model = model;
+        this.productAdviceService = productAdviceService;
+
+        this.webClient = WebClient.builder()
+                .baseUrl(baseUrl)
+                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
     }
 
-    public String processMessage(ChatRequest request) {
-        String msgOriginal = Optional.ofNullable(request.getMessage()).orElse("");
-        String msg = msgOriginal.toLowerCase(Locale.ROOT).trim();
+    public String getReply(ChatRequest request) {
 
-        // 1) Preguntas frecuentes
-        String faq = handleFaq(msg);
-        if (faq != null) return faq;
-
-        // 2) Código de pedido
-        String codigo = extractNumeroPedido(msg);
-        if (codigo != null) return handlePedidoStatus(codigo);
-
-        // 3) Consultas de precio (ej: "precio del multímetro")
-        String respPrecio = handlePriceQuery(msg);
-        if (respPrecio != null) return respPrecio;
-
-        // 4) Búsqueda general de productos (ej: "tienen cámaras de seguridad?")
-        String respProductos = handleProductSearch(msg);
-        if (respProductos != null) return respProductos;
-
-        // 5) Respuesta por defecto
-        return """
-                😅 No entendí eso, ¿puedes repetirlo?
-
-                Puedo ayudarte con:
-                • Estado de pedido (ej: EC-000123)
-                • Precios (ej: "precio del multímetro")
-                • Buscar productos (ej: "tienen cámaras de seguridad?")
-                • Envíos y delivery
-                • Pagos con Yape
-                """;
-    }
-
-    // ------------------------------------
-    // 1) Preguntas frecuentes
-    // ------------------------------------
-    private String handleFaq(String msg) {
-        if (msg.contains("envio") || msg.contains("envío") || msg.contains("delivery")) {
-            return """
-                    🚚 Realizamos envíos a todo el Perú.
-                    • En Lima el costo depende del distrito.
-                    • En provincias depende del departamento.
-                    El costo se calcula automáticamente en tu carrito.
-                    """;
+        if ((request.message() == null || request.message().isBlank())
+                && (request.history() == null || request.history().isEmpty())) {
+            return "¿Me puedes indicar tu consulta? 😊";
         }
 
-        if (msg.contains("yape")) {
-            return """
-                    📲 Puedes pagar con Yape al número **940 310 317**.
-                    En el Checkout verás el código QR para escanear.
-                    """;
+        String userMessage = request.message();
+        String normalized = normalize(userMessage);
+
+        // 1) FAQ de negocio (pagos, envíos, garantía) → respuesta fija
+        String faqAnswer = handleBusinessFaq(normalized);
+        if (faqAnswer != null) {
+            return faqAnswer;
         }
 
-        if (msg.contains("horario") || msg.contains("atienden") || msg.contains("abren")) {
-            return """
-                    🕒 Nuestro horario de atención es:
-                    Lunes a Sábado de 9:00 AM a 7:00 PM.
-                    """;
-        }
+        // 2) Detección de intención
+        Intent intent = detectIntent(normalized);
 
-        if (msg.contains("ubicacion") || msg.contains("ubicación") ||
-            msg.contains("direccion") || msg.contains("dirección")) {
-            return """
-                    📍 Estamos en Lima, Perú.
-                    Puedes escribirnos para enviarte la ubicación exacta por WhatsApp.
-                    """;
-        }
-
-        if (msg.contains("garantia") || msg.contains("garantía")) {
-            return """
-                    🛡 Nuestros productos cuentan con garantía según el fabricante.
-                    Ante cualquier falla, contáctanos con tu número de pedido.
-                    """;
-        }
-
-        return null;
-    }
-
-    // ------------------------------------
-    // 2) Estado de pedido
-    // ------------------------------------
-    private String extractNumeroPedido(String msg) {
-        Matcher matcher = PEDIDO_PATTERN.matcher(msg);
-        if (matcher.find()) {
-            return matcher.group(1).toUpperCase(Locale.ROOT);
-        }
-        return null;
-    }
-
-    private String handlePedidoStatus(String numeroPedido) {
-        Optional<Pedido> opt = pedidoRepository.findByNumeroPedido(numeroPedido);
-        if (opt.isEmpty()) {
-            return "❌ No encontré un pedido con el código " + numeroPedido +
-                    ". Verifica que esté bien escrito (ej: EC-000123).";
-        }
-
-        Pedido pedido = opt.get();
-        OrderStatus estado = pedido.getEstado();
-        String estadoTexto;
-
-        switch (estado) {
-            case RECIBIDO ->
-                    estadoTexto = "📩 RECIBIDO (esperando verificación de pago)";
-            case PAGO_VERIFICADO ->
-                    estadoTexto = "💰 PAGO_VERIFICADO (pago confirmado, pronto saldrá en reparto)";
-            case EN_CAMINO ->
-                    estadoTexto = "🚚 EN_CAMINO (tu pedido está en reparto)";
-            case ENTREGADO ->
-                    estadoTexto = "📦 ENTREGADO (pedido completado)";
-            default ->
-                    estadoTexto = estado.name();
-        }
-
-        return "📦 El estado actual de tu pedido " + numeroPedido + " es:\n" + estadoTexto;
-    }
-
-    // ------------------------------------
-    // 3) Consultas de precio
-    // ------------------------------------
-    private String handlePriceQuery(String msg) {
-        // solo intentamos si realmente habla de precio
-        if (!(msg.contains("precio") || msg.contains("cuanto") ||
-              msg.contains("cuánto") || msg.contains("vale") ||
-              msg.contains("cuesta"))) {
-            return null;
-        }
-
-        List<String> keywords = extractKeywords(msg);
-        if (keywords.isEmpty()) {
-            return "💰 ¿De qué producto quieres saber el precio?";
-        }
-
-        // probamos cada keyword hasta encontrar productos
-        for (String kw : keywords) {
-            List<Producto> encontrados =
-                    productoRepository.findTop5ByNombreContainingIgnoreCase(kw);
-            if (!encontrados.isEmpty()) {
-                Producto p = encontrados.get(0);
-                return "💰 El precio de **" + p.getNombre() + "** es S/ " + p.getPrecio();
+        switch (intent) {
+            case PRODUCT_INFO -> {
+                // Búsqueda inteligente + texto de IA, pero LAS VIÑETAS LAS ARMAMOS NOSOTROS
+                return replyWithProductIntelligence(userMessage);
+            }
+            case GENERAL -> {
+                // Pregunta general → LLM normal
+                return callOpenAIGeneral(request);
             }
         }
 
-        return "😕 No encontré el producto para darte el precio. " +
-               "¿Puedes indicarme el nombre más exacto (ej: 'multímetro digital')?";
+        // Fallback
+        return callOpenAIGeneral(request);
     }
 
-    // ------------------------------------
-    // 4) Búsqueda de productos
-    // ------------------------------------
-    private String handleProductSearch(String msg) {
-        List<String> keywords = extractKeywords(msg);
-        if (keywords.isEmpty()) {
-            return null;
+    // ==========================================================
+    // PRODUCTOS INTELIGENTES (sin romper el formato de viñetas)
+    // ==========================================================
+
+    private String replyWithProductIntelligence(String userMessage) {
+        ProductSearchResult result = productAdviceService.findProductsForMessage(userMessage);
+
+        // No hay productos en BD
+        if (result.type() == SearchType.NO_PRODUCTS_IN_DB) {
+            return """
+                    No encontré productos registrados en el sistema por ahora.
+                    
+                    Por favor, revisa que la tabla de productos tenga datos cargados.
+                    """;
         }
 
-        // juntamos resultados de varias keywords (sin repetir)
-        LinkedHashSet<Producto> resultado = new LinkedHashSet<>();
-
-        for (String kw : keywords) {
-            List<Producto> encontrados =
-                    productoRepository.findTop5ByNombreContainingIgnoreCase(kw);
-            resultado.addAll(encontrados);
-            if (resultado.size() >= 5) break; // máximo 5
+        List<Producto> productos = result.products();
+        if (productos == null || productos.isEmpty()) {
+            // Sin productos claros → usamos el mensaje “inteligente” de follow-up del servicio
+            return productAdviceService.buildProductSuggestionText(userMessage);
         }
 
-        if (resultado.isEmpty()) {
-            return null;
+        // 1) Pedimos SOLO un párrafo de explicación al modelo
+        String intro = callOpenAIIntroForProducts(userMessage, result);
+
+        if (intro == null || intro.isBlank()) {
+            intro = "Esto es lo que te puedo recomendar de nuestro catálogo según lo que me comentas:";
+        } else {
+            intro = intro.trim();
         }
 
-        StringBuilder sb = new StringBuilder("🔍 Encontré estos productos relacionados:\n\n");
-        resultado.stream().limit(5).forEach(p -> {
-            sb.append("• ").append(p.getNombre())
-              .append(" — S/ ").append(p.getPrecio())
-              .append("\n");
-        });
+        // 2) Construimos la lista con nuestro formato 100% controlado
+        String lista = productos.stream()
+                .map(productAdviceService::formatProductLine)
+                .collect(Collectors.joining("\n"));
 
-        sb.append("\nPuedes ver más detalles en el catálogo 😉");
-        return sb.toString();
+        String footer = "\n\nSi quieres más detalles de uno de ellos, dime el nombre o haz clic en la tarjeta.";
+
+        return intro + "\n\n" + lista + footer;
     }
 
-    // ------------------------------------
-    // Helpers para keywords
-    // ------------------------------------
-    private List<String> extractKeywords(String msg) {
-        // quitar acentos y caracteres raros
-        String normalized = normalize(msg);
-        // quitar signos
-        normalized = normalized.replaceAll("[^a-z0-9áéíóúüñ\\s]", " ");
-        String[] parts = normalized.split("\\s+");
-
-        List<String> keywords = new ArrayList<>();
-        for (String p : parts) {
-            if (p.length() < 3) continue; // muy corta
-            if (STOPWORDS.contains(p)) continue;
-            keywords.add(p);
+    /**
+     * Llamada a OpenAI SOLO para generar un párrafo corto de explicación.
+     * NO devuelve la lista de productos.
+     */
+    private String callOpenAIIntroForProducts(String userMessage, ProductSearchResult result) {
+        StringBuilder productsSummary = new StringBuilder();
+        productsSummary.append("Lista de productos candidatos:\n");
+        for (Producto p : result.products()) {
+            productsSummary.append("- ID: ").append(p.getId())
+                    .append(", Nombre: ").append(p.getNombre() == null ? "" : p.getNombre())
+                    .append(", Categoria: ").append(p.getCategoria() == null ? "" : p.getCategoria())
+                    .append(", Precio: ").append(p.getPrecio() == null ? "" : "S/ " + p.getPrecio())
+                    .append(", Descripcion: ").append(p.getDescripcion() == null ? "" : p.getDescripcion())
+                    .append("\n");
         }
 
-        return keywords;
+        String priceFilterText = "";
+        if (result.priceRange() != null) {
+            if (result.priceRange().min() != null && result.priceRange().max() != null) {
+                priceFilterText = "El cliente parece buscar precios entre S/ " + result.priceRange().min()
+                        + " y S/ " + result.priceRange().max() + ".";
+            } else if (result.priceRange().min() != null) {
+                priceFilterText = "El cliente parece buscar precios desde S/ " + result.priceRange().min() + ".";
+            } else if (result.priceRange().max() != null) {
+                priceFilterText = "El cliente parece buscar precios hasta S/ " + result.priceRange().max() + ".";
+            }
+        }
+
+        List<Map<String, String>> messages = new ArrayList<>();
+
+        // System: solo intro, nada de listas
+        messages.add(Map.of(
+                "role", "system",
+                "content", """
+                        Eres el asistente de ElectroCYB. Respondes siempre en español (Perú).
+                        Te daré una lista de productos de iluminación ya filtrados desde la base de datos.
+                        
+                        TU TAREA:
+                        - Escribir SOLO un párrafo corto (1 o 2 frases) explicando por qué esos productos son adecuados
+                          para lo que pide el cliente.
+                        - NO debes enumerar los productos ni escribir viñetas.
+                        - NO inventes productos ni precios.
+                        - No uses negritas ni Markdown, solo texto plano.
+                        """
+        ));
+
+        StringBuilder userContent = new StringBuilder();
+        userContent.append("Mensaje del cliente: ").append(userMessage).append("\n\n");
+        if (!priceFilterText.isBlank()) {
+            userContent.append(priceFilterText).append("\n\n");
+        }
+        userContent.append(productsSummary);
+
+        messages.add(Map.of(
+                "role", "user",
+                "content", userContent.toString()
+        ));
+
+        Map<String, Object> body = Map.of(
+                "model", model,
+                "messages", messages,
+                "temperature", 0.3,
+                "max_tokens", 120
+        );
+
+        Map<String, Object> response = webClient.post()
+                .uri("/chat/completions")
+                .bodyValue(body)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .onErrorResume(e -> {
+                    e.printStackTrace();
+                    return Mono.just(Map.of());
+                })
+                .block();
+
+        try {
+            List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
+            if (choices == null || choices.isEmpty())
+                return null;
+
+            Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
+            Object content = message.get("content");
+            return content != null ? content.toString() : null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // ==========================================================
+    // LLM general (no productos)
+    // ==========================================================
+
+    private String callOpenAIGeneral(ChatRequest request) {
+
+        Map<String, Object> body = Map.of(
+                "model", model,
+                "messages", buildMessages(request),
+                "temperature", 0.3,
+                "max_tokens", 400
+        );
+
+        Map<String, Object> response = webClient.post()
+                .uri("/chat/completions")
+                .bodyValue(body)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .onErrorResume(e -> {
+                    e.printStackTrace();
+                    return Mono.just(Map.of());
+                })
+                .block();
+
+        try {
+            List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
+            if (choices == null || choices.isEmpty())
+                return "Lo siento, no pude generar una respuesta.";
+
+            Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
+            Object content = message.get("content");
+            return content != null ? content.toString() : "Lo siento, no pude responder.";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Ocurrió un error al procesar tu consulta.";
+        }
+    }
+
+    private List<Map<String, String>> buildMessages(ChatRequest request) {
+
+        List<Map<String, String>> result = new ArrayList<>();
+
+        result.add(Map.of(
+                "role", "system",
+                "content", """
+                        Eres el asistente de ElectroCYB. Respondes siempre en español (Perú).
+                        Puedes ayudar sobre productos de iluminación, catálogos, recomendaciones, compatibilidad y compras.
+                        
+                        IMPORTANTE:
+                        - NO inventes métodos de pago, formas de envío ni garantías.
+                        - Si el usuario pregunta por métodos de pago, envíos o garantía, y no tienes la información,
+                          indica que esa información depende de la tienda y que el cliente debe confirmarla por los canales oficiales.
+                        Sé breve, amable y útil.
+                        """
+        ));
+
+        if (request.history() != null) {
+            List<Map<String, String>> history = request.history().stream()
+                    .map(m -> Map.of("role", m.role(), "content", m.content()))
+                    .toList();
+            result.addAll(limitHistory(history, 12));
+        }
+
+        result.add(Map.of("role", "user", "content", request.message()));
+
+        return result;
+    }
+
+    private List<Map<String, String>> limitHistory(List<Map<String, String>> history, int max) {
+        if (history.size() <= max) return history;
+        return history.subList(history.size() - max, history.size());
+    }
+
+    // ==========================================================
+    // INTENTOS y FAQ
+    // ==========================================================
+
+    private Intent detectIntent(String normalizedMsg) {
+        String t = normalizedMsg;
+
+        if (t.contains("recomiendame") || t.contains("recomienda")
+                || t.contains("busco") || t.contains("quiero comprar")
+                || t.contains("me sirve") || t.contains("que producto")
+                || t.contains("cual producto") || t.contains("producto")
+                || t.contains("foco") || t.contains("focos")
+                || t.contains("lampara") || t.contains("lamparas")
+                || t.contains("led") || t.contains("sensor")
+                || t.contains("camara") || t.contains("camaras")
+                || t.contains("seguridad") || t.contains("reflector")
+                || t.contains("bombilla") || t.contains("spot")
+                || t.contains("dicroico")) {
+            return Intent.PRODUCT_INFO;
+        }
+
+        return Intent.GENERAL;
+    }
+
+    private String handleBusinessFaq(String normalizedMsg) {
+        if (isPaymentQuestion(normalizedMsg)) {
+            return """
+                    Actualmente aceptamos pagos únicamente por Yape.
+                    
+                    Al coordinar tu pedido te enviaremos el número o el código QR de Yape
+                    para que puedas realizar el pago de forma rápida y segura.
+                    """.trim();
+        }
+
+        if (isShippingQuestion(normalizedMsg)) {
+            return """
+                    Estos son nuestros métodos de entrega:
+                    
+                    - Recojo en tienda (Lima, Perú), sin costo adicional.
+                    - Entrega a domicilio en Lima Metropolitana, con costo según distrito.
+                    - Envío a otros departamentos del Perú, con costo según el departamento.
+                    
+                    Si me indicas tu distrito o ciudad, puedo orientarte mejor.
+                    """.trim();
+        }
+
+        if (isWarrantyQuestion(normalizedMsg)) {
+            return """
+                    La garantía depende del producto específico.
+                    
+                    En general, al ser productos de iluminación, manejamos un aproximado
+                    de 6 meses de garantía, pero puede variar según el tipo de producto
+                    y el proveedor.
+                    """.trim();
+        }
+
+        return null;
+    }
+
+    private boolean isPaymentQuestion(String normalizedMsg) {
+        return (normalizedMsg.contains("metodo de pago") ||
+                normalizedMsg.contains("metodos de pago") ||
+                normalizedMsg.contains("forma de pago") ||
+                normalizedMsg.contains("formas de pago") ||
+                normalizedMsg.contains("como pago") ||
+                normalizedMsg.contains("como puedo pagar") ||
+                (normalizedMsg.contains("pago") && normalizedMsg.contains("acept")));
+    }
+
+    private boolean isShippingQuestion(String normalizedMsg) {
+        return (normalizedMsg.contains("envio") ||
+                normalizedMsg.contains("envios") ||
+                normalizedMsg.contains("entrega") ||
+                normalizedMsg.contains("delivery") ||
+                normalizedMsg.contains("recojo en tienda") ||
+                normalizedMsg.contains("recoger en tienda") ||
+                normalizedMsg.contains("envian a") ||
+                normalizedMsg.contains("envio a domicilio") ||
+                normalizedMsg.contains("envias a") ||
+                normalizedMsg.contains("costo de envio"));
+    }
+
+    private boolean isWarrantyQuestion(String normalizedMsg) {
+        return (normalizedMsg.contains("garantia") ||
+                normalizedMsg.contains("garantía") ||
+                (normalizedMsg.contains("cambio") && normalizedMsg.contains("producto")) ||
+                normalizedMsg.contains("devolucion") ||
+                normalizedMsg.contains("devolución"));
     }
 
     private String normalize(String input) {
-        String temp = Normalizer.normalize(input, Normalizer.Form.NFD);
-        return temp.replaceAll("\\p{M}", "").toLowerCase(Locale.ROOT);
+        if (input == null) return "";
+        String lower = input.toLowerCase(Locale.ROOT);
+        String normalized = Normalizer.normalize(lower, Normalizer.Form.NFD);
+        return normalized.replaceAll("\\p{M}", "");
+    }
+
+    private enum Intent {
+        GENERAL,
+        PRODUCT_INFO
     }
 }
