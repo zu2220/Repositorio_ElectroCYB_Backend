@@ -1,6 +1,8 @@
 package com.electrocyb.store.pedido;
 
+import com.electrocyb.store.email.EmailService;
 import com.electrocyb.store.pedido.dto.*;
+import jakarta.mail.MessagingException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,9 +13,12 @@ import java.util.List;
 public class PedidoService {
 
     private final PedidoRepository pedidoRepository;
+    private final EmailService emailService;
 
-    public PedidoService(PedidoRepository pedidoRepository) {
+    public PedidoService(PedidoRepository pedidoRepository,
+                         EmailService emailService) {
         this.pedidoRepository = pedidoRepository;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -53,14 +58,14 @@ public class PedidoService {
             }
         }
 
-        // 🔹 Guardamos el subtotal
+        // Guardamos el subtotal
         pedido.setSubtotal(subtotal);
 
-        // 🔹 Calculamos costo de envío (lógica simple que puedes mejorar)
+        // Costo de envío
         double costoEnvio = calcularCostoEnvio(c);
         pedido.setCostoEnvio(costoEnvio);
 
-        // 🔹 Total = subtotal + envío
+        // Total = subtotal + envío
         pedido.setTotal(subtotal + costoEnvio);
 
         // Historial inicial
@@ -70,7 +75,7 @@ public class PedidoService {
         h.setDescripcion("Pedido recibido.");
         pedido.getHistorialEstados().add(h);
 
-        // Primero guardamos para obtener ID
+        // Guardamos para obtener ID
         pedido = pedidoRepository.save(pedido);
 
         // Generar número de pedido tipo EC-000001
@@ -93,10 +98,8 @@ public class PedidoService {
     }
 
     /**
-     * 🔹 Aquí defines TU regla de negocio para el delivery.
-     * De momento, una versión simple:
+     * Regla de negocio para el costo de delivery.
      */
-
     private double calcularCostoEnvio(ClienteEmbeddable cliente) {
         if (cliente == null) {
             return 12.0;
@@ -112,7 +115,7 @@ public class PedidoService {
 
         String text = base.toLowerCase();
 
-        // 🟢 ZONA A - Lima Centro (S/ 8)
+        // ZONA A - Lima Centro (S/ 8)
         if (containsAny(text,
                 "cercado de lima", "lima",
                 "breña",
@@ -125,7 +128,7 @@ public class PedidoService {
             return 8.0;
         }
 
-        // 🔵 ZONA B - Lima moderna (S/ 10)
+        // ZONA B - Lima moderna (S/ 10)
         if (containsAny(text,
                 "miraflores",
                 "san isidro",
@@ -135,7 +138,7 @@ public class PedidoService {
             return 10.0;
         }
 
-        // 🟠 ZONA C - Lima sur / este cercano (S/ 12)
+        // ZONA C - Lima sur / este cercano (S/ 12)
         if (containsAny(text,
                 "santiago de surco", "surco",
                 "chorrillos",
@@ -145,7 +148,7 @@ public class PedidoService {
             return 12.0;
         }
 
-        // 🟣 ZONA D - Lima norte / este lejano (S/ 14)
+        // ZONA D - Lima norte / este lejano (S/ 14)
         if (containsAny(text,
                 "san juan de lurigancho",
                 "san juan de miraflores",
@@ -162,7 +165,7 @@ public class PedidoService {
             return 14.0;
         }
 
-        // 🟥 ZONA E - Callao (S/ 15)
+        // ZONA E - Callao (S/ 15)
         if (containsAny(text,
                 "callao",
                 "bellavista",
@@ -172,8 +175,7 @@ public class PedidoService {
             return 15.0;
         }
 
-        // 🟡 ZONA F - DEPARTAMENTOS COSTA (S/ 20)
-        // (Incluimos nombre del departamento y algunas capitales porsiacaso
+        // ZONA F - DEPARTAMENTOS COSTA (S/ 20)
         if (containsAny(text,
                 "tumbes",
                 "piura",
@@ -187,7 +189,7 @@ public class PedidoService {
             return 20.0;
         }
 
-        // 🟤 ZONA G - DEPARTAMENTOS SIERRA / SELVA (S/ 24)
+        // ZONA G - DEPARTAMENTOS SIERRA / SELVA (S/ 24)
         if (containsAny(text,
                 "cajamarca",
                 "amazonas",
@@ -226,23 +228,23 @@ public class PedidoService {
         List<OrderItemDto> itemDtos = pedido.getItems() == null
                 ? List.of()
                 : pedido.getItems().stream()
-                        .map(i -> new OrderItemDto(
-                                i.getProductoId(),
-                                i.getNombre(),
-                                i.getPrecio(),
-                                i.getImagen(),
-                                i.getCantidad()))
-                        .toList();
+                .map(i -> new OrderItemDto(
+                        i.getProductoId(),
+                        i.getNombre(),
+                        i.getPrecio(),
+                        i.getImagen(),
+                        i.getCantidad()))
+                .toList();
 
         // historial
         List<HistorialEstadoDto> historialDtos = pedido.getHistorialEstados() == null
                 ? List.of()
                 : pedido.getHistorialEstados().stream()
-                        .map(h -> new HistorialEstadoDto(
-                                h.getEstado(),
-                                h.getFecha(),
-                                h.getDescripcion()))
-                        .toList();
+                .map(h -> new HistorialEstadoDto(
+                        h.getEstado(),
+                        h.getFecha(),
+                        h.getDescripcion()))
+                .toList();
 
         // cliente
         ClienteEmbeddable c = pedido.getCliente();
@@ -287,11 +289,14 @@ public class PedidoService {
             String numeroPedido,
             OrderStatus nuevoEstado,
             String descripcion) {
+
         Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
                 .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
 
+        // actualizar estado
         pedido.setEstado(nuevoEstado);
 
+        // historial
         HistorialEstadoEmbeddable h = new HistorialEstadoEmbeddable();
         h.setEstado(nuevoEstado);
         h.setFecha(Instant.now());
@@ -303,6 +308,16 @@ public class PedidoService {
         pedido.getHistorialEstados().add(h);
 
         pedido = pedidoRepository.save(pedido);
+
+        // 👉 Enviar correo sólo cuando el pedido está ENTREGADO
+        if (nuevoEstado == OrderStatus.ENTREGADO) {
+            try {
+                emailService.sendOrderDeliveredEmail(pedido);
+            } catch (MessagingException e) {
+                // No rompemos la lógica si falla el correo
+                e.printStackTrace();
+            }
+        }
 
         return mapToDto(pedido);
     }

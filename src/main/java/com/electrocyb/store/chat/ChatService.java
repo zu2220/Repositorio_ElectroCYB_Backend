@@ -64,23 +64,20 @@ public class ChatService {
                 return replyWithProductIntelligence(userMessage);
             }
             case GENERAL -> {
-                // Pregunta general → LLM normal
                 return callOpenAIGeneral(request);
             }
         }
 
-        // Fallback
         return callOpenAIGeneral(request);
     }
 
     // ==========================================================
-    // PRODUCTOS INTELIGENTES (sin romper el formato de viñetas)
+    // PRODUCTOS INTELIGENTES
     // ==========================================================
 
     private String replyWithProductIntelligence(String userMessage) {
         ProductSearchResult result = productAdviceService.findProductsForMessage(userMessage);
 
-        // No hay productos en BD
         if (result.type() == SearchType.NO_PRODUCTS_IN_DB) {
             return """
                     No encontré productos registrados en el sistema por ahora.
@@ -91,11 +88,11 @@ public class ChatService {
 
         List<Producto> productos = result.products();
         if (productos == null || productos.isEmpty()) {
-            // Sin productos claros → usamos el mensaje “inteligente” de follow-up del servicio
+            // aquí se usa el mensaje inteligente de follow-up
             return productAdviceService.buildProductSuggestionText(userMessage);
         }
 
-        // 1) Pedimos SOLO un párrafo de explicación al modelo
+        // 1) Intro corta generada por IA
         String intro = callOpenAIIntroForProducts(userMessage, result);
 
         if (intro == null || intro.isBlank()) {
@@ -104,7 +101,7 @@ public class ChatService {
             intro = intro.trim();
         }
 
-        // 2) Construimos la lista con nuestro formato 100% controlado
+        // 2) Lista en formato controlado
         String lista = productos.stream()
                 .map(productAdviceService::formatProductLine)
                 .collect(Collectors.joining("\n"));
@@ -114,10 +111,6 @@ public class ChatService {
         return intro + "\n\n" + lista + footer;
     }
 
-    /**
-     * Llamada a OpenAI SOLO para generar un párrafo corto de explicación.
-     * NO devuelve la lista de productos.
-     */
     private String callOpenAIIntroForProducts(String userMessage, ProductSearchResult result) {
         StringBuilder productsSummary = new StringBuilder();
         productsSummary.append("Lista de productos candidatos:\n");
@@ -144,7 +137,6 @@ public class ChatService {
 
         List<Map<String, String>> messages = new ArrayList<>();
 
-        // System: solo intro, nada de listas
         messages.add(Map.of(
                 "role", "system",
                 "content", """
@@ -284,6 +276,7 @@ public class ChatService {
     private Intent detectIntent(String normalizedMsg) {
         String t = normalizedMsg;
 
+        // Claramente relacionado a productos / precios / catálogo
         if (t.contains("recomiendame") || t.contains("recomienda")
                 || t.contains("busco") || t.contains("quiero comprar")
                 || t.contains("me sirve") || t.contains("que producto")
@@ -294,7 +287,12 @@ public class ChatService {
                 || t.contains("camara") || t.contains("camaras")
                 || t.contains("seguridad") || t.contains("reflector")
                 || t.contains("bombilla") || t.contains("spot")
-                || t.contains("dicroico")) {
+                || t.contains("dicroico") || t.contains("kit solar")
+                || t.contains("tira led") || t.contains("tira") || t.contains("cinta led")
+                || t.contains("precio") || t.contains("cuanto cuesta")
+                || t.contains("cuánto cuesta") || t.contains("cuanto vale")
+                || t.contains("cuánto vale") || t.contains("vale")
+                || t.contains("catalogo") || t.contains("catálogo")) {
             return Intent.PRODUCT_INFO;
         }
 
