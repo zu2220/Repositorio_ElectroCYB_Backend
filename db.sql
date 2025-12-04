@@ -1,8 +1,8 @@
--- 1. CREACIÓN DE LA BASE DE DATOS
-----------------------------------
---CREATE DATABASE IF NOT EXISTS electrocyb_db;
+-- 1. CREACIÓN DE LA BASE DE DATOS (OPCIONAL)
+---------------------------------------------
+-- CREATE DATABASE electrocyb_db;
+-- Conéctate luego a la base (en psql: \c electrocyb_db, en DBeaver selecciona la BD)
 
---USE electrocyb_db;
 
 -- 2. CREACIÓN DE LA TABLA 'users'
 ----------------------------------
@@ -38,19 +38,36 @@ CREATE TABLE IF NOT EXISTS producto_caracteristicas (
 );
 
 -- 5. INSERCIÓN DE DATOS
--------------------------
+------------------------
 
 -- 5.1. Datos de la tabla 'users'
 INSERT INTO users (email, full_name, password, phone, role)
 VALUES (
-    'admin@admin.com',
-    'Administrador',
-    '$2a$10$rqE.z3196kzXOIlgnC4ao.ALRrwQhV3/eyiXz3H8mxTAzdDvrpLiu',
-    '999999999',
-    'ADMIN'
+    'admin@admin.com',
+    'Administrador',
+    '$2a$10$rqE.z3196kzXOIlgnC4ao.ALRrwQhV3/eyiXz3H8mxTAzdDvrpLiu',
+    '999999999',
+    'ADMIN'
 );
 
 -- 5.2. Datos de la tabla 'productos'
+-- Productos 1 a 12 (datos verdaderos)
+
+INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria, stock) VALUES
+(1, 'Lámpara LED Moderna Circular', '35.00', '/uploads/productos/IMG-20250806-WA0091.jpg', 'Lámpara LED de diseño moderno para sala o comedor. Bajo consumo energético.', 'Lámparas', 40),
+(2, 'Fuente de poder 12V 10A', '45.00', '/uploads/productos/IMG-20250806-WA0089.jpg', 'Fuente de poder 12V 10A con armazón de aluminio.', 'Fuentes de poder', 91),
+(3, 'Lámpara LED Moderna Circular', '20.00', '/uploads/productos/IMG-20250806-WA0088.jpg', 'Estilo industrial moderno. Ideal para cocinas y comedores.', 'Lámparas', 15),
+(4, 'Detector de Billetes Falsos', '50.00', '/uploads/productos/IMG-20250806-WA0024.jpg', 'Detector de billetes falsos para evitar fraude en transacciones.', 'Detector de billetes falsos', 0),
+(5, 'Foco LED RGB con Parlante', '30.00', '/uploads/productos/IMG-20250806-WA0027.jpg', 'Foco LED RGB con parlante para ambientes.', 'Focos LED RGB', 91),
+(6, 'Foco LED 5W Calido', '5.00', '/uploads/productos/IMG-20250806-WA0030.jpg', 'Foco de luz cálida.', 'Focos LED', 29),
+(7, 'Tira LED RGB Inteligente', '75.00', '/uploads/productos/IMG-20250806-WA0032.jpg', 'Tira LED RGB con control por aplicación móvil. 5 metros de longitud.', 'Tiras LED', 10),
+(8, 'Lámpara LED Moderna con Sensor de Movimiento', '22.00', '/uploads/productos/IMG-20250806-WA0058.jpg', 'Reflector LED de alta potencia para exteriores con sensor de movimiento. Ideal para interiores y fachadas.', 'Lámparas', 78),
+(9, 'Kit Solar con Radio y Linterna', '90.00', '/uploads/productos/IMG-20250806-WA0033.jpg', 'Kit Solar con Radio y Linterna, ideal para emergencias y actividades al aire libre.', 'Linternas', 55),
+(10, 'Cinta LED NEON', '20.00', '/uploads/productos/IMG-20250806-WA0021.jpg', 'Cinta LED NEON 5 metros, luz continua, flexible ideal para letreros.', 'Tiras LED', 33),
+(11, 'Manguera LED RGB', '10.00 x metro', '/uploads/productos/IMG-20250806-WA0016.jpg', 'Manguera LED RGB, luz continua, flexible ideal para letreros y proyectos.', 'Tiras LED', 12),
+(12, 'Manguera LED', '7.00 x metro', '/uploads/productos/IMG-20250806-WA0017.jpg', 'Manguera LED, luz continua, flexible ideal para letreros y proyectos.', 'Tiras LED', 99);
+
+-- Productos 13 en adelante (tal como los tenías)
 
 INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria, stock) VALUES
 (13, 'Manguera LED Navideña', '3.50 x metro', '/uploads/productos/IMG-20250806-WA0019.jpg', 'Manguera LED Navideña, luz continua, flexible ideal para Proyectos y Figuras navideñas.', 'Tiras LED', 72);
@@ -102,6 +119,8 @@ INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria, stock
 
 INSERT INTO productos (id, nombre, precio, imagen, descripcion, categoria, stock) VALUES
 (29, 'Lampara de Emergencia LED Recargable', '60.00', '/uploads/productos/IMG-20250806-WA0055.jpg', 'Lampara de Emergencia LED Recargable con forma de ojos', 'Lamparas de Emergencia', 36);
+
+
 -- 5.3. Datos de la tabla 'producto_caracteristicas'
 -- Producto 1
 INSERT INTO producto_caracteristicas (producto_id, nombre, valor) VALUES
