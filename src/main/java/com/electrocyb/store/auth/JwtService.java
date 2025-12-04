@@ -2,6 +2,7 @@ package com.electrocyb.store.auth;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
@@ -10,9 +11,12 @@ import java.util.Date;
 @Component
 public class JwtService {
 
-    // En producción lee esto de application.properties
-    private final String SECRET = "una_clave_super_secreta_y_larga_para_jwt_1234567890";
-    private final long EXPIRATION_MS = 1000 * 60 * 60 * 4; // 4h
+    // En producción leeremos estos valores desde application.properties o variables de entorno
+    @Value("${jwt.secret:una_clave_super_secreta_y_larga_para_jwt_1234567890}")
+    private String SECRET;
+
+    @Value("${jwt.expiration:14400000}")
+    private long EXPIRATION_MS; // default 4h
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(SECRET.getBytes());

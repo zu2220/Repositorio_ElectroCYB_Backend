@@ -7,30 +7,31 @@
 -- 2. CREACIÓN DE LA TABLA 'users'
 ----------------------------------
 CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
     full_name VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
     phone VARCHAR(20),
-    role ENUM('ADMIN', 'USER') NOT NULL
+    role VARCHAR(20) NOT NULL
 );
 
 -- 3. CREACIÓN DE LA TABLA 'productos'
 -------------------------------------
 CREATE TABLE IF NOT EXISTS productos (
-    id INT PRIMARY KEY, -- Usamos INT en lugar de AUTO_INCREMENT ya que los INSERTs especifican el ID
+    id INTEGER PRIMARY KEY,
     nombre VARCHAR(255) NOT NULL,
-    precio VARCHAR(50) NOT NULL, -- Usamos VARCHAR debido a valores como '10.00 x metro' o 'Consultar'
+    precio VARCHAR(50) NOT NULL,
     imagen VARCHAR(255),
     descripcion TEXT,
-    categoria VARCHAR(100)
+    categoria VARCHAR(100),
+    stock INTEGER DEFAULT 0
 );
 
 -- 4. CREACIÓN DE LA TABLA 'producto_caracteristicas'
 -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS producto_caracteristicas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    producto_id INT NOT NULL,
+    id SERIAL PRIMARY KEY,
+    producto_id INTEGER NOT NULL,
     nombre VARCHAR(100) NOT NULL,
     valor VARCHAR(255),
     FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE

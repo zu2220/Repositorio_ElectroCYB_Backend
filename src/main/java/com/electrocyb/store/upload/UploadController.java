@@ -12,7 +12,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/uploads")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin
 public class UploadController {
 
     @Value("${file.upload-dir:uploads}")
